@@ -35,7 +35,7 @@ else:
 
 if selected_url:
     st.write(f"Fetching and summarizing news from: {selected_url}")
-
+    @st.cache_data(ttl=3600)  # Cache for 1 hour to avoid frequent fetching
     def fetch_news(url):
         """Fetch news articles or text from a URL."""
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -55,9 +55,12 @@ if selected_url:
         st.write(f"**Original Content from URL**")
         st.write(article_content)
 
+        # Caching the summarization model
+        @st.cache_resource
+        def load_summarizer():
+            return pipeline("summarization", model="facebook/bart-large-cnn")
         # Summarization using Hugging Face transformers
         st.subheader("Summarized News with Hugging Face")
-        summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
         def summarize_news_huggingface(news_text):
             """Summarizes news articles using Hugging Face"""
@@ -75,6 +78,7 @@ if selected_url:
 # Section 2: Forecasting and Anomaly Detection for Power Prices
 st.subheader("Power Price Forecasting and Anomaly Detection")
 
+@st.cache_data(ttl=86400) # Cache historical data for 1 day
 def get_historical_data(ticker="BZ=F", period="1y"):
     """Fetch historical data for Brent crude prices from Yahoo Finance"""
     data = yf.download(ticker, period=period)
@@ -88,18 +92,18 @@ st.line_chart(oil_data['Close'], width=700)
 st.subheader("Brent Oil Price Forecasting with Prophet")
 
 # Prepare data for Prophet (must have 'ds' for date and 'y' for values)
-df_prophet = oil_data.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+@st.cache_data(ttl=86400)  # Cache Prophet results for 1 day
+def fit_prophet_model(data):
+    df_prophet = data.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+    model = Prophet()
+    model.fit(df_prophet)
+    future = model.make_future_dataframe(periods=30)
+    return model.predict(future)
 
-# Fit Prophet model
-m = Prophet()
-m.fit(df_prophet)
+forecast = fit_prophet_model(oil_data)
 
-# Forecasting the next 30 days
-future = m.make_future_dataframe(periods=30)
-forecast = m.predict(future)
-
-# Plot forecast using Streamlit's plotly chart
-fig_forecast = plot_plotly(m, forecast)
+# Plotting the forecast
+fig_forecast = plot_plotly(Prophet(), forecast)
 st.plotly_chart(fig_forecast)
 
 st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
@@ -130,6 +134,7 @@ if selected_url:
 # Section 4: Historical Trend Analysis
 st.subheader("Historical Trend Analysis")
 
+@st.cache_data(ttl=86400)
 def compare_with_index(oil_data, index_ticker="^GSPC"):
     """Compare Brent oil prices with another index (e.g., S&P 500)"""
     index_data = yf.download(index_ticker, period="1y")
