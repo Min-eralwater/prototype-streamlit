@@ -8,3 +8,4 @@ prophet
 plotly
 numpy==1.26.0
 tensorflow
+tf-keras
