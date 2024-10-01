@@ -17,8 +17,9 @@ st.write("Summarize news articles from a predefined list of URLs or enter your o
 
 # List of predefined URLs (you can modify or add more)
 predefined_urls = {
-    "Reuters Energy Article": "https://www.reuters.com/markets/deals/ftc-allows-chevron-hess-deal-bars-john-hess-board-2024-09-30/",
     "CNA Energy Article": "https://www.channelnewsasia.com/business/energy-firms-boost-gas-exploration-southeast-asia-meet-growing-demand-4163071",
+    "Offshore Technology Article":"https://www.offshore-technology.com/news/uk-north-sea-oil-and-gas-industry-failing-to-shift-investments-to-renewable-energy/?cf-view",
+    "Reuters Energy Article": "https://www.reuters.com/markets/deals/ftc-allows-chevron-hess-deal-bars-john-hess-board-2024-09-30/"
 }
 
 # User can select a predefined URL or input their own
