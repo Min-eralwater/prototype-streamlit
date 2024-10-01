@@ -1,9 +1,9 @@
-streamlit==1.25.0
-requests==2.31.0
-pandas==2.1.1
-beautifulsoup4==4.12.2
-yfinance==0.2.31
-transformers==4.33.0
-prophet==1.2.4
-plotly==5.17.0
+streamlit
+requests
+pandas
+beautifulsoup4
+yfinance
+transformers
+prophet
+plotly
 numpy==1.26.0
