@@ -63,6 +63,9 @@ if selected_url:
         # Summarization using Hugging Face transformers
         st.subheader("Summarized News with Hugging Face")
 
+        # Load the summarizer model
+        summarizer = load_summarizer()
+
         def summarize_news_huggingface(news_text):
             """Summarizes news articles using Hugging Face"""
             summary = summarizer(news_text, max_length=100, min_length=25, do_sample=False)
