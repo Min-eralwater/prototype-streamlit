@@ -96,14 +96,15 @@ st.subheader("Brent Oil Price Forecasting with Prophet")
 def fit_prophet_model(data):
     df_prophet = data.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
     model = Prophet()
-    model.fit(df_prophet)
+    m = model.fit(df_prophet)
     future = model.make_future_dataframe(periods=30)
-    return model.predict(future)
+    forecast = model.predict(future)
+    return m, forecast
 
-forecast = fit_prophet_model(oil_data)
+m, forecast = fit_prophet_model(oil_data)
 
 # Plotting the forecast
-fig_forecast = plot_plotly(Prophet(), forecast)
+fig_forecast = plot_plotly(m, forecast)
 st.plotly_chart(fig_forecast)
 
 st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
