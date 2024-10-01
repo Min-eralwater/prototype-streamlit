@@ -3,7 +3,7 @@ requests
 pandas
 beautifulsoup4
 yfinance
-transformers
+transformers==2.5.0
 prophet
 plotly
 numpy==1.26.0
