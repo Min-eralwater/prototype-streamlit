@@ -1,0 +1,147 @@
+import streamlit as st
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+import yfinance as yf
+from transformers import pipeline
+from prophet import Prophet 
+from prophet.plot import plot_plotly
+import plotly.graph_objects as go
+
+
+# Section 1: News Aggregation and Summarization using Hugging Face Transformers
+st.title("TRADEmark: Power News Aggregation and Forecasting Site")
+
+st.subheader("News Aggregation")
+st.write("Summarize news articles from a predefined list of URLs or enter your own.")
+
+# List of predefined URLs (you can modify or add more)
+predefined_urls = {
+    "Reuters Energy Article": "https://www.reuters.com/markets/deals/ftc-allows-chevron-hess-deal-bars-john-hess-board-2024-09-30/",
+    "CNA Energy Article": "https://www.channelnewsasia.com/business/energy-firms-boost-gas-exploration-southeast-asia-meet-growing-demand-4163071",
+}
+
+# User can select a predefined URL or input their own
+option = st.selectbox(
+    "Select a news source or enter a URL:",
+    options=["Select predefined URL", "Enter your own URL"]
+)
+
+if option == "Select predefined URL":
+    url = st.selectbox("Choose a predefined URL:", options=list(predefined_urls.keys()))
+    selected_url = predefined_urls[url]  # Get the selected URL
+else:
+    selected_url = st.text_input("Enter a URL to summarize:")
+
+if selected_url:
+    st.write(f"Fetching and summarizing news from: {selected_url}")
+
+    def fetch_news(url):
+        """Fetch news articles or text from a URL."""
+        headers = {"User-Agent": "Mozilla/5.0"}
+        try:
+            page = requests.get(url, headers=headers)
+            soup = BeautifulSoup(page.content, "html.parser")
+
+            # Extract article content (this depends on the website structure, simplified here)
+            paragraphs = [p.get_text() for p in soup.find_all('p', limit=5)]
+            return " ".join(paragraphs)
+        except Exception as e:
+            return f"Error fetching the URL: {e}"
+
+    article_content = fetch_news(selected_url)
+
+    if article_content:
+        st.write(f"**Original Content from URL**")
+        st.write(article_content)
+
+        # Summarization using Hugging Face transformers
+        st.subheader("Summarized News with Hugging Face")
+        summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
+        def summarize_news_huggingface(news_text):
+            """Summarizes news articles using Hugging Face"""
+            summary = summarizer(news_text, max_length=100, min_length=25, do_sample=False)
+            return summary[0]['summary_text']
+
+        try:
+            summary = summarize_news_huggingface(article_content)
+            st.write(f"**Summarized Content:** {summary}")
+        except Exception as e:
+            st.write(f"- Error summarizing article: {e}")
+    else:
+        st.write("No content fetched from the URL")
+
+# Section 2: Forecasting and Anomaly Detection for Power Prices
+st.subheader("Power Price Forecasting and Anomaly Detection")
+
+def get_historical_data(ticker="BZ=F", period="1y"):
+    """Fetch historical data for Brent crude prices from Yahoo Finance"""
+    data = yf.download(ticker, period=period)
+    return data
+
+# Fetching Brent Oil data
+oil_data = get_historical_data()
+st.line_chart(oil_data['Close'], width=700)
+
+# Prophet Forecasting for Brent Oil Prices
+st.subheader("Brent Oil Price Forecasting with Prophet")
+
+# Prepare data for Prophet (must have 'ds' for date and 'y' for values)
+df_prophet = oil_data.reset_index()[['Date', 'Close']].rename(columns={'Date': 'ds', 'Close': 'y'})
+
+# Fit Prophet model
+m = Prophet()
+m.fit(df_prophet)
+
+# Forecasting the next 30 days
+future = m.make_future_dataframe(periods=30)
+forecast = m.predict(future)
+
+# Plot forecast using Streamlit's plotly chart
+fig_forecast = plot_plotly(m, forecast)
+st.plotly_chart(fig_forecast)
+
+st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+
+# Section 3: Real-time Alerts with Keyword Tracking
+st.subheader("Real-Time Alerts with Keyword Tracking")
+st.write("Set up alerts for specific keywords (e.g., 'price increase', 'oil shortage')")
+
+keywords = st.text_input("Enter keywords to track for alerts", "oil, power price")
+keywords = [kw.strip() for kw in keywords.split(",")]
+
+def keyword_tracking(articles, keywords):
+    """Track if any keywords are found in the articles"""
+    alerts = []
+    for article in articles:
+        for keyword in keywords:
+            if keyword.lower() in article.lower():
+                alerts.append(f"Alert: {keyword} found in article: {article}")
+    return alerts
+
+# Running keyword tracking on fetched articles
+if selected_url:
+    st.subheader("Keyword Alerts")
+    alerts = keyword_tracking([article_content], keywords)
+    for alert in alerts:
+        st.write(alert)
+
+# Section 4: Historical Trend Analysis
+st.subheader("Historical Trend Analysis")
+
+def compare_with_index(oil_data, index_ticker="^GSPC"):
+    """Compare Brent oil prices with another index (e.g., S&P 500)"""
+    index_data = yf.download(index_ticker, period="1y")
+    combined_data = pd.DataFrame({
+        "Oil Prices": oil_data['Close'],
+        "Index": index_data['Close']
+    })
+    combined_data.dropna(inplace=True)
+    return combined_data
+
+# Fetch and compare with S&P 500 index
+comparison_data = compare_with_index(oil_data)
+st.line_chart(comparison_data)
+
+st.write("You can now analyze trends between Brent Oil and S&P 500 index.")
