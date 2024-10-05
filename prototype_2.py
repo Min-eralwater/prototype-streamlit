@@ -116,8 +116,6 @@ if selected_url:
 # Section 2: Forecasting and Anomaly Detection for Power Prices
 st.subheader("Power Price Forecasting and Anomaly Detection")
 
-@st.cache_data(ttl=86400) # Cache historical data for 1 day
-
 # Define initial system keywords with their default risks and weights
 OIL_KEYWORDS = {
     'OPEC': {'default_risk': 'upward', 'weight': 1.5},
