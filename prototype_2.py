@@ -12,7 +12,36 @@ import plotly.graph_objects as go
 # Section 1: News Aggregation and Summarization using Hugging Face Transformers
 st.title("TRADEmark: Power News Aggregation and Forecasting Site")
 
-st.subheader("News Aggregation")
+st.subheader("News Aggregation from multiple Sites")
+
+def get_news(api_key, query):
+    url = f'https://newsapi.org/v2/everything?q={query}&apiKey={api_key}'
+    response = requests.get(url)
+    return response.json()
+
+# API key input
+    api_key = st.text_input('Enter your NewsAPI key', type='password')
+
+# Query input
+    query = st.text_input('Enter the topic/keywords you want to search for')
+
+if st.button('Get News'):
+        if api_key and query:
+            news_data = get_news(api_key, query)
+            if news_data.get('status') == 'ok':
+                articles = news_data.get('articles')
+                for article in articles:
+                    st.subheader(article['title'])
+                    st.write(article['description'])
+                    st.write(f"Source: {article['source']['name']}")
+                    st.write(f"Published At: {article['publishedAt']}")
+                    st.write(f"[Read more]({article['url']})")
+                    st.write("---")
+            else:
+                st.error("Failed to fetch news articles. Please check your API key and query.")
+        else:
+            st.error("Please try again later.")
+
 st.write("Summarize news articles from a predefined list of URLs or enter your own.")
 
 # List of predefined URLs (you can modify or add more)
