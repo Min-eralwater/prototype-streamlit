@@ -14,16 +14,16 @@ st.title("TRADEmark: Power News Aggregation and Forecasting Site")
 
 st.subheader("News Aggregation from multiple Sites")
 
+# API key input
+api_key = st.text_input('Enter your NewsAPI key', type='password')
+
+# Query input
+query = st.text_input('Enter the topic/keywords you want to search for')
+
 def get_news(api_key, query):
     url = f'https://newsapi.org/v2/everything?q={query}&apiKey={api_key}'
     response = requests.get(url)
     return response.json()
-
-# API key input
-    api_key = st.text_input('Enter your NewsAPI key', type='password')
-
-# Query input
-    query = st.text_input('Enter the topic/keywords you want to search for')
 
 if st.button('Get News'):
         if api_key and query:
