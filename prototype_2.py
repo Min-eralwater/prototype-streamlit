@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 # Section 1: News Aggregation and Summarization using Hugging Face Transformers
 st.title("TRADEmark: Power News Aggregation and Forecasting Site")
 
-st.subheader("News Aggregation from multiple Sites")
+st.header("News Aggregation from Multiple Sites")
 
 # API key input
 api_key = st.text_input('Enter your NewsAPI key', type='password')
@@ -114,7 +114,7 @@ if selected_url:
         st.write("No content fetched from the URL")
 
 # Section 2: Forecasting and Anomaly Detection for Power Prices
-st.subheader("Power Price Forecasting and Anomaly Detection")
+st.header("Power Price Forecasting and Anomaly Detection", divider=True)
 
 # Define initial system keywords with their default risks and weights
 OIL_KEYWORDS = {
@@ -196,9 +196,9 @@ def get_user_defined_keywords():
 
 # Fetching Brent Oil data
 oil_data = get_historical_data()
-st.line_chart(oil_data['Close'], width=700)
+#st.line_chart(oil_data['Close'], width=700)
 
-st.subheader("Brent Oil Price Forecasting with Prophet")
+st.subheader("Brent Oil Price Forecasting with Prophet", divider=True)
 
 # Prepare data for Prophet (must have 'ds' for date and 'y' for values)
 @st.cache_data(ttl=86400)  # Cache Prophet results for 1 day
@@ -254,7 +254,7 @@ st.plotly_chart(fig_adjusted_forecast)
 st.write(forecast[['ds', 'yhat', 'yhat_adjusted', 'yhat_lower', 'yhat_upper']].tail())
 
 # Section 3: Real-time Alerts with Keyword Tracking
-st.subheader("Real-Time Alerts with Keyword Tracking")
+st.subheader("Real-Time Alerts with Keyword Tracking",  divider=True)
 st.write("Set up alerts for specific keywords (e.g., 'price increase', 'oil shortage')")
 
 keywords = st.text_input("Enter keywords to track for alerts", "oil, power price")
@@ -277,7 +277,7 @@ if selected_url:
         st.write(alert)
 
 # Section 4: Historical Trend Analysis
-st.subheader("Historical Trend Analysis")
+st.subheader("Historical Trend Analysis",  divider=True)
 
 @st.cache_data(ttl=86400)
 def compare_with_index(oil_data, index_ticker="^GSPC"):
@@ -295,3 +295,63 @@ comparison_data = compare_with_index(oil_data)
 st.line_chart(comparison_data)
 
 st.write("You can now analyze trends between Brent Oil and S&P 500 index.")
+
+# Section: Algorithmic Trading Module Mockup
+st.subheader("Algorithmic Trading Module", divider=True)
+
+# Step 1: Choose a trading strategy
+st.write("### Select Trading Strategy")
+strategy = st.selectbox(
+    "Choose the trading strategy:",
+    ("Moving Average Crossover", "RSI Strategy", "MACD Strategy")
+)
+
+# Step 2: Set parameters for the strategy
+st.write("### Set Strategy Parameters")
+
+if strategy == "Moving Average Crossover":
+    short_ma_period = st.number_input("Short Moving Average Period", min_value=1, max_value=100, value=10)
+    long_ma_period = st.number_input("Long Moving Average Period", min_value=1, max_value=200, value=50)
+elif strategy == "RSI Strategy":
+    rsi_period = st.number_input("RSI Period", min_value=1, max_value=50, value=14)
+    rsi_overbought = st.number_input("Overbought RSI Level", min_value=50, max_value=100, value=70)
+    rsi_oversold = st.number_input("Oversold RSI Level", min_value=0, max_value=50, value=30)
+elif strategy == "MACD Strategy":
+    macd_fast = st.number_input("MACD Fast Period", min_value=1, max_value=50, value=12)
+    macd_slow = st.number_input("MACD Slow Period", min_value=1, max_value=100, value=26)
+    macd_signal = st.number_input("MACD Signal Period", min_value=1, max_value=50, value=9)
+
+# Step 3: Set buy/sell conditions
+st.write("### Set Buy/Sell Conditions")
+buy_condition = st.text_input("Enter Buy Condition (e.g., 'Close > MA')", "Close > Short MA")
+sell_condition = st.text_input("Enter Sell Condition (e.g., 'Close < MA')", "Close < Long MA")
+
+# Step 4: Execute or Simulate Trades
+st.write("### Execute or Simulate Trades")
+trade_action = st.radio("Action", ("Simulate", "Execute"))
+
+# Example of a trade log
+trade_log = pd.DataFrame({
+    'Date': ["2024-01-01", "2024-01-02", "2024-01-03"],
+    'Action': ["Buy", "Sell", "Buy"],
+    'Price': [100.5, 101.7, 102.3],
+    'Profit/Loss': [0, 1.2, 0.6]
+})
+
+if st.button(f"{trade_action} Trades"):
+    if trade_action == "Simulate":
+        st.write("Simulation of trades based on the selected strategy and conditions:")
+    else:
+        st.write("Executing live trades based on the selected strategy and conditions:")
+    
+    # Show mock trade log
+    st.dataframe(trade_log)
+
+# Step 5: Show trade results and summary
+st.write("### Trade Summary")
+total_trades = len(trade_log)
+total_profit_loss = trade_log['Profit/Loss'].sum()
+
+st.write(f"Total Trades Executed: {total_trades}")
+st.write(f"Total Profit/Loss: ${total_profit_loss:.2f}")
+
