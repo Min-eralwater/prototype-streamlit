@@ -117,16 +117,89 @@ if selected_url:
 st.subheader("Power Price Forecasting and Anomaly Detection")
 
 @st.cache_data(ttl=86400) # Cache historical data for 1 day
+
+# Define initial system keywords with their default risks and weights
+OIL_KEYWORDS = {
+    'OPEC': {'default_risk': 'upward', 'weight': 1.5},
+    'sanctions': {'default_risk': 'upward', 'weight': 1.2},
+    'supply cut': {'default_risk': 'upward', 'weight': 1.3},
+    'demand increase': {'default_risk': 'upward', 'weight': 1.1},
+    'supply increase': {'default_risk': 'downward', 'weight': 1.0},
+    'recession': {'default_risk': 'downward', 'weight': 1.4}
+}
+
+# Function to detect keywords and allow users to assign risk factors
+def detect_keywords_and_assign_risk(article, keywords):
+    detected_keywords = {word: data for word, data in keywords.items() if word in article['content'].lower()}
+    user_risk_assignment = {}
+    
+    st.write(f"Detected factors in the news:")
+    
+    for keyword, data in detected_keywords.items():
+        st.write(f"- {keyword.capitalize()}: Default risk is '{data['default_risk']}' (Weight: {data['weight']})")
+        assigned_risk = st.radio(f"Assign risk for {keyword.capitalize()}:", ('upward', 'downward'), index=0 if data['default_risk'] == 'upward' else 1)
+        user_risk_assignment[keyword] = {'assigned_risk': assigned_risk, 'weight': data['weight']}
+    
+    return user_risk_assignment
+
+# Calculate adjustment factor based on user-assigned risks and keyword weights
+def calculate_adjustment_factor(risk_assignments):
+    adjustment = 0
+    for keyword, risk_data in risk_assignments.items():
+        risk = risk_data['assigned_risk']
+        weight = risk_data['weight']
+        if risk == 'upward':
+            adjustment += weight
+        elif risk == 'downward':
+            adjustment -= weight
+    return adjustment
+
+# Save user inputs and adjustment factors to a CSV file for future analysis
+def save_adjustment_data(risk_assignments, adjustment_factor, filepath="adjustment_data.csv"):
+    data = []
+    for keyword, risk_data in risk_assignments.items():
+        data.append({
+            'Keyword': keyword,
+            'Assigned Risk': risk_data['assigned_risk'],
+            'Weight': risk_data['weight'],
+            'Adjustment Factor': adjustment_factor
+        })
+    df = pd.DataFrame(data)
+    
+    # Append to CSV file, creating the file if it doesn't exist
+    df.to_csv(filepath, mode='a', header=not pd.io.common.file_exists(filepath), index=False)
+
+# Fetch historical data for oil prices
 def get_historical_data(ticker="BZ=F", period="1y"):
-    """Fetch historical data for Brent crude prices from Yahoo Finance"""
     data = yf.download(ticker, period=period)
     return data
+
+# Function to get user-defined keywords, risks, and weights
+def get_user_defined_keywords():
+    st.subheader("Add Custom Keywords, Risks, and Weights")
+
+    custom_keywords = {}
+
+    # Streamlit form to input custom keywords, risks, and weights
+    with st.form("custom_keywords_form"):
+        custom_keyword = st.text_input("Enter custom keyword")
+        custom_risk = st.radio("Assign risk", ("upward", "downward"))
+        custom_weight = st.slider("Assign weight", min_value=0.1, max_value=5.0, step=0.1)
+        submitted = st.form_submit_button("Add Keyword")
+        
+        if submitted and custom_keyword:
+            custom_keywords[custom_keyword.lower()] = {
+                'default_risk': custom_risk,
+                'weight': custom_weight
+            }
+            st.success(f"Added custom keyword: {custom_keyword} with {custom_risk} risk and weight {custom_weight}")
+
+    return custom_keywords
 
 # Fetching Brent Oil data
 oil_data = get_historical_data()
 st.line_chart(oil_data['Close'], width=700)
 
-# Prophet Forecasting for Brent Oil Prices
 st.subheader("Brent Oil Price Forecasting with Prophet")
 
 # Prepare data for Prophet (must have 'ds' for date and 'y' for values)
@@ -146,6 +219,41 @@ fig_forecast = plot_plotly(m, forecast)
 st.plotly_chart(fig_forecast)
 
 st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+
+# Example article (this would normally be fetched dynamically from the news API)
+sample_article = {
+    'content': 'OPEC is cutting supply and demand is increasing due to the upcoming winter season.'
+}
+
+# Detect keywords and allow user to assign risk factors
+risk_assignments = detect_keywords_and_assign_risk(sample_article, OIL_KEYWORDS)
+
+# Allow user to add their own custom keywords, risks, and weights
+custom_keywords = get_user_defined_keywords()
+
+# Combine predefined keywords with user-defined ones
+combined_keywords = {**OIL_KEYWORDS, **custom_keywords}
+
+# Detect both predefined and custom keywords in the article
+combined_risk_assignments = detect_keywords_and_assign_risk(sample_article, combined_keywords)
+
+# Calculate adjustment factor based on combined user input
+adjustment_factor = calculate_adjustment_factor(combined_risk_assignments)
+st.write(f"Total Adjustment Factor: {adjustment_factor}")
+
+# Save the risk assignments and adjustment factor for future analysis
+save_adjustment_data(combined_risk_assignments, adjustment_factor)
+
+# Apply the adjustment factor to the forecast (1 adjustment unit = 1% change)
+adjustment_percentage = adjustment_factor * 0.01
+forecast['yhat_adjusted'] = forecast['yhat'] * (1 + adjustment_percentage)
+
+# Plot the adjusted forecast
+st.write("Forecast with Adjustment:")
+fig_adjusted_forecast = plot_plotly(m, forecast)
+st.plotly_chart(fig_adjusted_forecast)
+
+st.write(forecast[['ds', 'yhat', 'yhat_adjusted', 'yhat_lower', 'yhat_upper']].tail())
 
 # Section 3: Real-time Alerts with Keyword Tracking
 st.subheader("Real-Time Alerts with Keyword Tracking")
