@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 # Section 1: News Aggregation and Summarization using Hugging Face Transformers
 st.title("TRADEmark: Power News Aggregation and Forecasting Site")
 
-st.header("News Aggregation from Multiple Sites")
+st.header("News Aggregator", divider=True)
 
 # API key input
 api_key = st.text_input('Enter your NewsAPI key', type='password')
@@ -131,7 +131,7 @@ def detect_keywords_and_assign_risk(article, keywords):
     detected_keywords = {word: data for word, data in keywords.items() if word in article['content'].lower()}
     user_risk_assignment = {}
     
-    st.write(f"Detected factors in the news:")
+    st.write(f"brent oil:")
     
     for keyword, data in detected_keywords.items():
         st.write(f"- {keyword.capitalize()}: Default risk is '{data['default_risk']}' (Weight: {data['weight']})")
@@ -198,7 +198,7 @@ def get_user_defined_keywords():
 oil_data = get_historical_data()
 #st.line_chart(oil_data['Close'], width=700)
 
-st.subheader("Brent Oil Price Forecasting with Prophet", divider=True)
+st.subheader("Brent Oil Price Forecasting with Prophet")
 
 # Prepare data for Prophet (must have 'ds' for date and 'y' for values)
 @st.cache_data(ttl=86400)  # Cache Prophet results for 1 day
