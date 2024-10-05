@@ -26,21 +26,26 @@ def get_news(api_key, query):
     return response.json()
 
 if st.button('Get News'):
+    reputable_sources = ['BBC News', 'Financial Times', 'The Guardian', 'Reuters', 'The New York Times']
         if api_key and query:
             news_data = get_news(api_key, query)
             if news_data.get('status') == 'ok':
                 articles = news_data.get('articles')
-                for article in articles:
-                    st.subheader(article['title'])
-                    st.write(article['description'])
-                    st.write(f"Source: {article['source']['name']}")
-                    st.write(f"Published At: {article['publishedAt']}")
-                    st.write(f"[Read more]({article['url']})")
-                    st.write("---")
+                 # Filter articles by reputable sources and limit to 10 articles
+                filtered_articles = [article for article in articles if article['source']['name'] in reputable_sources]
+                limited_articles = filtered_articles[:10]
+                if limited_articles: 
+                    for article in limited_articles:
+                        st.subheader(article['title'])
+                        st.write(article['description'])
+                        st.write(f"Source: {article['source']['name']}")
+                        st.write(f"Published At: {article['publishedAt']}")
+                        st.write(f"[Read more]({article['url']})")
+                        st.write("---")
+                else:
+                    st.error("Failed to fetch news articles. Please check your API key and query.")
             else:
-                st.error("Failed to fetch news articles. Please check your API key and query.")
-        else:
-            st.error("Please try again later.")
+                st.error("Please try again later.")
 
 st.write("Summarize news articles from a predefined list of URLs or enter your own.")
 
