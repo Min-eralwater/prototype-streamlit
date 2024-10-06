@@ -18,7 +18,7 @@ st.header("News Aggregator", divider=True)
 api_key = st.text_input('Enter your NewsAPI key', type='password')
 
 # Query input
-query = st.text_input('Enter the topic/keywords you want to search for')
+query = st.text_input('Enter the topic/keywords you want to search for (eg. Brent Oil, Energy Exchange')
 
 def get_news(api_key, query):
     url = f'https://newsapi.org/v2/everything?q={query}&apiKey={api_key}'
